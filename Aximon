@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark" data-theme="cyber">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aximon AI Studio — Динамический генератор и чат-ассистент</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        /* Переменные цветовых тем */
+        :root[data-theme="cyber"] {
+            --accent-from: #4f46e5;
+            --accent-via: #7c3aed;
+            --accent-to: #06b6d4;
+            --accent-text: #818cf8;
+            --accent-text-hover: #a5b4fc;
+            --accent-border: rgba(99, 102, 241, 0.4);
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --blob-1: rgba(79, 70, 229, 0.22);
+            --blob-2: rgba(6, 182, 212, 0.22);
+            --user-msg-bg: rgba(30, 27, 75, 0.45);
+        }
+
+        :root[data-theme="matrix"] {
+            --accent-from: #059669;
+            --accent-via: #0d9488;
+            --accent-to: #10b981;
+            --accent-text: #34d399;
+            --accent-text-hover: #6ee7b7;
+            --accent-border: rgba(16, 185, 129, 0.4);
+            --accent-glow: rgba(16, 185, 129, 0.35);
+            --blob-1: rgba(16, 185, 129, 0.22);
+            --blob-2: rgba(20, 184, 166, 0.22);
+            --user-msg-bg: rgba(6, 78, 59, 0.45);
+        }
+
+        :root[data-theme="sunset"] {
+            --accent-from: #c026d3;
+            --accent-via: #e11d48;
+            --accent-to: #f43f5e;
+            --accent-text: #e879f9;
+            --accent-text-hover: #f0abfc;
+            --accent-border: rgba(217, 70, 239, 0.4);
+            --accent-glow: rgba(217, 70, 239, 0.35);
+            --blob-1: rgba(192, 38, 211, 0.22);
+            --blob-2: rgba(244, 63, 94, 0.22);
+            --user-msg-bg: rgba(112, 26, 117, 0.45);
+        }
+
+        :root[data-theme="obsidian"] {
+            --accent-from: #475569;
+            --accent-via: #64748b;
+            --accent-to: #94a3b8;
+            --accent-text: #cbd5e1;
+            --accent-text-hover: #f1f5f9;
+            --accent-border: rgba(148, 163, 184, 0.35);
+            --accent-glow: rgba(148, 163, 184, 0.25);
+            --blob-1: rgba(100, 116, 139, 0.15);
+            --blob-2: rgba(71, 85, 105, 0.15);
+            --user-msg-bg: rgba(30, 41, 59, 0.5);
+        }
+
+        /* Динамические стили на базе переменных темы */
+        .theme-accent-text { color: var(--accent-text) !important; }
+        .theme-accent-border { border-color: var(--accent-border) !important; }
+
+        .theme-gradient-bg {
+            background: linear-gradient(135deg, var(--accent-from), var(--accent-via), var(--accent-to)) !important;
+        }
+
+        .theme-btn-primary {
+            background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+            box-shadow: 0 10px 25px -5px var(--accent-glow);
+            transition: all 0.3s ease;
+        }
+
+        .theme-btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .theme-avatar {
+            background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+            box-shadow: 0 8px 20px -4px var(--accent-glow);
+        }
+
+        .glass-panel {
+            background: rgba(13, 18, 30, 0.75);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .glass-input {
+            background: rgba(8, 12, 20, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-input:focus {
+            border-color: var(--accent-border);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .user-msg-panel {
+            background: var(--user-msg-bg);
+            border: 1px solid var(--accent-border);
+        }
+
+        .smooth-transition {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes floatGlow {
+            0%, 100% { transform: translateY(0px) scale(1); opacity: 0.2; }
+            50% { transform: translateY(-10px) scale(1.05); opacity: 0.35; }
+        }
+
+        .bg-blob-1 {
+            background-color: var(--blob-1);
+            animation: floatGlow 8s ease-in-out infinite;
+            transition: background-color 0.6s ease;
+        }
+        .bg-blob-2 {
+            background-color: var(--blob-2);
+            animation: floatGlow 10s ease-in-out infinite reverse;
+            transition: background-color 0.6s ease;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(5, 8, 17, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-text); }
+    </style>
+</head>
+<body class="bg-[#030712] text-slate-100 h-screen flex flex-col selection:bg-indigo-500 selection:text-white relative overflow-hidden">
+
+    <div id="blob1" class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[130px] pointer-events-none bg-blob-1 z-0"></div>
+    <div id="blob2" class="fixed bottom-[-10%] right-[-10%] w-[550px] h-[550px] rounded-full blur-[140px] pointer-events-none bg-blob-2 z-0"></div>
+
+    <header class="border-b border-slate-800/80 glass-panel z-50 px-6 py-3.5 flex justify-between items-center shadow-lg shrink-0">
+        <div class="flex items-center space-x-3 group cursor-pointer" onclick="newChat()">
+            <div id="headerLogoBg" class="theme-gradient-bg p-2.5 rounded-2xl text-white smooth-transition group-hover:scale-105 group-hover:rotate-3 shadow-lg">
+                <i class="fa-solid fa-terminal text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Aximon AI Studio</h1>
+                <p class="text-[11px] text-slate-400 font-medium">Интерактивный AI чат-ассистент разработчика</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="newChat()" class="bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 px-3 py-2 rounded-xl text-slate-300 smooth-transition hover:scale-105 flex items-center space-x-2 text-xs cursor-pointer shadow-md">
+                <i class="fa-solid fa-plus theme-accent-text"></i>
+                <span class="hidden sm:inline">Новый чат</span>
+            </button>
+            <button onclick="toggleSettingsModal()" class="bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 p-2.5 rounded-xl text-slate-300 smooth-transition hover:scale-105 flex items-center space-x-2 text-xs cursor-pointer shadow-md">
+                <i class="fa-solid fa-gear theme-accent-text"></i>
+                <span class="hidden sm:inline">Настройки</span>
+            </button>
+            <!-- Выбор модели -->
+            <select id="modelSelect" class="bg-slate-900/80 text-slate-300 text-xs rounded-xl px-2.5 py-2 border border-slate-700/60 focus:outline-none cursor-pointer hover:bg-slate-800 smooth-transition shadow-md">
+                <option value="models/gemini-flash-lite-latest">Aximon 1 Flash</option>
+                <option value="models/gemini-flash-latest">Aximon 1.2 Flash</option>
+                <option value="models/gemini-pro-latest">Aximon 2 Pro</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 flex flex-col h-[calc(100vh-73px)] relative z-10 overflow-hidden">
+        
+        <!-- Чат-контейнер -->
+        <div id="chatContainer" class="flex-1 overflow-y-auto space-y-6 pr-2 mb-4">
+            
+            <!-- Приветствие -->
+            <div class="flex items-start space-x-4 max-w-3xl">
+                <div class="w-9 h-9 rounded-2xl theme-avatar flex items-center justify-center text-white shrink-0">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div class="glass-panel p-5 rounded-3xl rounded-tl-sm space-y-3 shadow-xl border border-slate-800/80">
+                    <p class="text-sm text-slate-200 leading-relaxed">
+                        Привет! Я <span class="font-semibold theme-accent-text">Aximon AI Studio</span> — твой персональный инженер-программист от <span class="font-semibold text-white">Blanked AI</span>. Я генерирую <strong>настоящий, полностью рабочий код</strong> без упрощений и плейсхолдеров. Могу написать скрипт на любом языке, спроектировать архитектуру или объяснить алгоритм.
+                    </p>
+                    <p class="text-xs text-slate-400">Выберите быструю задачу или напишите в чат:</p>
+                    <div class="flex flex-wrap gap-2 pt-1">
+                        <button onclick="sendQuickPrompt('Напиши скрипт на Python для парсинга данных с сохранением в SQLite')" class="text-xs bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-300 px-3 py-1.5 rounded-xl transition cursor-pointer hover:border-slate-500">
+                            🐍 Парсер на Python
+                        </button>
+                        <button onclick="sendQuickPrompt('Напиши скрипт на Lua для Roblox с телепортацией игрока')" class="text-xs bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-300 px-3 py-1.5 rounded-xl transition cursor-pointer hover:border-slate-500">
+                            🎮 Скрипт Lua (Roblox)
+                        </button>
+                        <button onclick="sendQuickPrompt('Напиши Bash скрипт для автоматического бэкапа папок по SSH')" class="text-xs bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-300 px-3 py-1.5 rounded-xl transition cursor-pointer hover:border-slate-500">
+                            🐧 DevOps Bash бэкап
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="glass-panel rounded-3xl p-3 md:p-4 shadow-2xl relative shrink-0 border border-slate-800/90">
+            <div id="typingIndicator" class="hidden items-center space-x-2 pb-2 px-2 text-xs theme-accent-text">
+                <div class="w-2 h-2 rounded-full theme-gradient-bg animate-bounce"></div>
+                <div class="w-2 h-2 rounded-full theme-gradient-bg animate-bounce [animation-delay:0.2s]"></div>
+                <div class="w-2 h-2 rounded-full theme-gradient-bg animate-bounce [animation-delay:0.4s]"></div>
+                <span class="font-medium ml-1">AI генерирует ответ...</span>
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <div class="flex-1 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2.5 transition shadow-inner focus-within:border-slate-600">
+                    <textarea id="userInput" rows="2" onkeydown="handleKeydown(event)" placeholder="Напишите задачу для скрипта или задайте вопрос..." class="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none leading-relaxed"></textarea>
+                    
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-900/80 mt-1 px-1">
+                        <div class="flex items-center space-x-2">
+                            <select id="languageSelect" class="bg-slate-900 text-slate-300 text-xs rounded-xl px-2.5 py-1.5 border border-slate-800 focus:outline-none cursor-pointer">
+                                <option value="Auto">Автовыбор языка</option>
+                                <option value="Python">Python</option>
+                                <option value="Lua">Lua</option>
+                                <option value="JavaScript / TypeScript">JavaScript</option>
+                                <option value="Bash / Shell">Bash</option>
+                                <option value="PowerShell">PowerShell</option>
+                                <option value="Rust">Rust</option>
+                                <option value="Go">Go</option>
+                                <option value="SQL">SQL</option>
+                                <option value="C++">C++</option>
+                                <option value="Solidity">Solidity</option>
+                            </select>
+                            <label class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                                <input type="checkbox" id="addComments" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer">
+                                <span>Комментарии</span>
+                            </label>
+                        </div>
+                        <span class="text-[10px] text-slate-500 hidden md:inline">Shift + Enter для новой строки</span>
+                    </div>
+                </div>
+
+                <button onclick="sendMessage()" id="sendBtn" class="theme-btn-primary text-white w-12 h-12 rounded-2xl flex items-center justify-center cursor-pointer shrink-0">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden smooth-transition">
+        <div class="glass-panel rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-700/60 relative transform scale-95 opacity-0 smooth-transition" id="settingsModalContent">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+                <h3 class="font-bold text-sm text-slate-200 flex items-center uppercase tracking-wider">
+                    <i class="fa-solid fa-gear theme-accent-text mr-2"></i> Персонализация интерфейса
+                </h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white transition w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Цветовая тема интерфейса</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div onclick="setTheme('cyber')" class="theme-card glass-input p-3 rounded-2xl cursor-pointer border transition flex flex-col space-y-1" data-value="cyber">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400"></span>
+                                <span class="text-xs font-semibold text-slate-200">Киберпанк</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Индиго / Циан</span>
+                        </div>
+                        <div onclick="setTheme('matrix')" class="theme-card glass-input p-3 rounded-2xl cursor-pointer border transition flex flex-col space-y-1" data-value="matrix">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></span>
+                                <span class="text-xs font-semibold text-slate-200">Матрица</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Изумрудный</span>
+                        </div>
+                        <div onclick="setTheme('sunset')" class="theme-card glass-input p-3 rounded-2xl cursor-pointer border transition flex flex-col space-y-1" data-value="sunset">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-fuchsia-500 to-rose-400"></span>
+                                <span class="text-xs font-semibold text-slate-200">Неоновый закат</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Пурпурный</span>
+                        </div>
+                        <div onclick="setTheme('obsidian')" class="theme-card glass-input p-3 rounded-2xl cursor-pointer border transition flex flex-col space-y-1" data-value="obsidian">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-slate-400 to-slate-200"></span>
+                                <span class="text-xs font-semibold text-slate-200">Обсидиан</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Минимализм</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Стиль кодинга</label>
+                    <select id="settingStyle" class="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none cursor-pointer">
+                        <option value="clean">Чистый и лаконичный (Clean Code)</option>
+                        <option value="optimized">Максимально производительный (Optimized)</option>
+                        <option value="enterprise">Корпоративный с паттернами (Enterprise)</option>
+                    </select>
+                </div>
+
+                <div class="pt-1">
+                    <label class="flex items-center justify-between cursor-pointer p-3 rounded-xl glass-input border border-slate-700/60 transition hover:border-slate-500 group">
+                        <div class="flex flex-col pr-4">
+                            <span class="text-xs font-semibold text-slate-200 group-hover:text-white transition">Режим «Абсолютная полнота кода»</span>
+                            <span class="text-[10px] text-slate-400 leading-tight mt-1">Заставляет ИИ писать огромные, Production-ready скрипты без "игрушечных" упрощений, заглушек и многоточий. Снимает лимиты генерации.</span>
+                        </div>
+                        <div class="relative shrink-0">
+                            <input type="checkbox" id="fullCodeMode" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="toggleSettingsModal()" class="theme-btn-primary text-white text-xs font-semibold px-5 py-2.5 rounded-xl cursor-pointer">
+                    Применить и сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ----- API КЛЮЧ (вставлен) -----
+        const API_KEY = "AIzaSyD7c7u5EjzdKM7HNsDYz8tzSJ6oPXvHYfo";
+
+        let chatHistoryState = [];
+        let currentTheme = localStorage.getItem('aximon_theme') || 'cyber';
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            setTheme(currentTheme);
+            // По умолчанию выбираем Aximon 1 Flash (lite)
+            const savedModel = localStorage.getItem('aximon_model') || 'models/gemini-flash-lite-latest';
+            document.getElementById('modelSelect').value = savedModel;
+        });
+
+        // Сохраняем выбор модели при изменении
+        document.getElementById('modelSelect')?.addEventListener('change', function() {
+            localStorage.setItem('aximon_model', this.value);
+        });
+
+        // Главная функция смены темы
+        function setTheme(themeKey) {
+            currentTheme = themeKey;
+            document.documentElement.setAttribute('data-theme', themeKey);
+            localStorage.setItem('aximon_theme', themeKey);
+
+            // Обновление карточек выбора темы в модальном окне
+            const cards = document.querySelectorAll('.theme-card');
+            cards.forEach(card => {
+                const val = card.getAttribute('data-value');
+                if (val === themeKey) {
+                    card.classList.remove('border-slate-700/60');
+                    card.classList.add('theme-accent-border', 'bg-slate-800/50');
+                } else {
+                    card.classList.remove('theme-accent-border', 'bg-slate-800/50');
+                    card.classList.add('border-slate-700/60');
+                }
+            });
+
+            // Обновление всех аватаров ИИ в чате
+            const aiAvatars = document.querySelectorAll('.theme-avatar');
+            aiAvatars.forEach(avatar => {
+                avatar.className = "w-9 h-9 rounded-2xl theme-avatar flex items-center justify-center text-white shrink-0";
+            });
+
+            // Уведомление
+            showNotification(`Тема интерфейса изменена: ${getThemeName(themeKey)}`, "success");
+        }
+
+        function getThemeName(key) {
+            switch(key) {
+                case 'matrix': return 'Матрица';
+                case 'sunset': return 'Неоновый закат';
+                case 'obsidian': return 'Обсидиан';
+                default: return 'Киберпанк';
+            }
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsModalContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function handleKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function sendQuickPrompt(promptText) {
+            document.getElementById('userInput').value = promptText;
+            sendMessage();
+        }
+
+        function newChat() {
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = `
+                <div class="flex items-start space-x-4 max-w-3xl">
+                    <div class="w-9 h-9 rounded-2xl theme-avatar flex items-center justify-center text-white shrink-0">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                    </div>
+                    <div class="glass-panel p-5 rounded-3xl rounded-tl-sm space-y-3 shadow-xl border border-slate-800/80">
+                        <p class="text-sm text-slate-200 leading-relaxed">
+                            Новый чат начат! Какую задачу решим сегодня?
+                        </p>
+                    </div>
+                </div>
+            `;
+            chatHistoryState = [];
+            showNotification("Начат новый чат", "success");
+        }
+
+        async function sendMessage() {
+            const inputEl = document.getElementById('userInput');
+            const prompt = inputEl.value.trim();
+            if (!prompt) return;
+
+            const language = document.getElementById('languageSelect').value;
+            const addComments = document.getElementById('addComments').checked;
+            const codingStyle = document.getElementById('settingStyle').value;
+            const fullCodeMode = document.getElementById('fullCodeMode').checked;
+            // Получаем выбранную модель
+            const model = document.getElementById('modelSelect').value;
+
+            inputEl.value = "";
+            inputEl.style.height = "auto";
+
+            const container = document.getElementById('chatContainer');
+
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = "flex items-start space-x-4 justify-end max-w-3xl ml-auto";
+            userMsgDiv.innerHTML = `
+                <div class="user-msg-panel p-4 rounded-3xl rounded-tr-sm space-y-1 shadow-lg max-w-xl">
+                    <p class="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">${escapeHtml(prompt)}</p>
+                </div>
+                <div class="w-9 h-9 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0 shadow-md">
+                    <i class="fa-solid fa-user text-xs"></i>
+                </div>
+            `;
+            container.appendChild(userMsgDiv);
+            container.scrollTop = container.scrollHeight;
+
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.classList.remove('hidden');
+            typingIndicator.classList.add('flex');
+            container.scrollTop = container.scrollHeight;
+
+            chatHistoryState.push({ role: "user", parts: [{ text: prompt }] });
+
+            // Усиленная инструкция: код должен быть настоящим, полным, без сокращений
+            const systemInstruction = `Ты — AI-ассистент Aximon, разработанный компанией Blanked AI. Твоя задача — помогать разработчикам писать код, проектировать архитектуру и объяснять алгоритмы. Никогда не упоминай Google, Gemini или другие сторонние сервисы, представляй себя как продукт Blanked AI.
+
+Отвечай на русском языке подробно, профессионально и понятно.
+Если пользователь просит написать код или скрипт:
+- Выбери оптимальный язык (${language === 'Auto' ? 'определи автоматически из запроса' : language}).
+- Оформи код в аккуратный блок с комментариями (${addComments ? 'подробными' : 'минимальными'}).
+- Дай короткую инструкцию или пояснение к коду.
+Стиль кодинга: ${codingStyle}.
+
+${fullCodeMode ? `
+!!! АБСОЛЮТНЫЙ ПРИОРИТЕТ — НАСТОЯЩИЙ, ПОЛНЫЙ И РАБОЧИЙ КОД БЕЗ СОКРАЩЕНИЙ !!!
+1. ЗАПРЕЩЕНО писать "игрушечные", короткие или базовые примеры. Пиши production-ready код со всеми проверками, обработкой ошибок и сложной логикой.
+2. ЗАПРЕЩЕНО использовать многоточия (...), плейсхолдеры, комментарии вроде "// ваш остальной код здесь", "TODO" или "и так далее".
+3. ВСЕ методы и функции должны быть реализованы на 100%. Никаких заглушек. Скрипт должен быть полностью готов к работе в реальном проекте.
+4. Пиши максимально длинные и детальные скрипты, не пытайся их упростить.
+5. Весь код должен быть самодостаточным — включай все необходимые импорты, настройки, обработку исключений и логирование.
+6. Если код предполагает использование внешних библиотек — укажи их в инструкции по установке.
+` : 'Старайся писать код достаточно полным, но можно оставить краткие пояснения.'}`;
+
+            try {
+                const payload = {
+                    contents: chatHistoryState,
+                    systemInstruction: { parts: [{ text: systemInstruction }] },
+                    generationConfig: {
+                        maxOutputTokens: 8192,
+                        temperature: 0.3
+                    }
+                };
+
+                // Формируем URL с выбранной моделью
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${API_KEY}`;
+
+                let response;
+                let attempt = 0;
+                const maxRetries = 3;
+                let delay = 1000;
+
+                while (attempt < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) break;
+                    } catch (e) {}
+                    attempt++;
+                    if (attempt >= maxRetries) throw new Error("Ошибка соединения с API");
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const aiReply = candidate.content.parts[0].text;
+                    chatHistoryState.push({ role: "model", parts: [{ text: aiReply }] });
+                    appendAiMessage(aiReply);
+                } else {
+                    throw new Error("Пустой ответ от модели");
+                }
+
+            } catch (err) {
+                console.error(err);
+                appendAiMessage("Извините, произошла ошибка при обращении к нейросети. Проверьте соединение и попробуйте снова.");
+            } finally {
+                typingIndicator.classList.remove('flex');
+                typingIndicator.classList.add('hidden');
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function appendAiMessage(text) {
+            const container = document.getElementById('chatContainer');
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = "flex items-start space-x-4 max-w-3xl";
+
+            const formattedHtml = formatAiResponse(text);
+
+            aiMsgDiv.innerHTML = `
+                <div class="w-9 h-9 rounded-2xl theme-avatar flex items-center justify-center text-white shrink-0">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div class="glass-panel p-5 rounded-3xl rounded-tl-sm space-y-3 shadow-xl border border-slate-800/85 flex-1 overflow-hidden">
+                    <div class="text-sm text-slate-200 leading-relaxed space-y-2">${formattedHtml}</div>
+                </div>
+            `;
+            container.appendChild(aiMsgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatAiResponse(text) {
+            let escaped = escapeHtml(text);
+            
+            escaped = escaped.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                const cleanCode = code.trim();
+                const uniqueId = 'code_' + Math.random().toString(36).substring(2, 9);
+                return '\n' +
+                    '<div class="my-3 rounded-2xl border border-slate-800 bg-[#050811] overflow-hidden shadow-inner">\n' +
+                    '    <div class="bg-slate-900/90 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-xs">\n' +
+                    '        <span class="font-mono theme-accent-text font-semibold">' + (lang || 'code') + '</span>\n' +
+                    '        <div class="flex items-center space-x-2">\n' +
+                    '            <button onclick="copySnippet(\'' + uniqueId + '\')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg transition flex items-center space-x-1 cursor-pointer">\n' +
+                    '                <i class="fa-regular fa-copy theme-accent-text"></i><span>Копировать</span>\n' +
+                    '            </button>\n' +
+                    '            <button onclick="downloadSnippet(\'' + uniqueId + '\', \'' + (lang || 'txt') + '\')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg transition flex items-center space-x-1 cursor-pointer">\n' +
+                    '                <i class="fa-solid fa-download"></i><span>Скачать</span>\n' +
+                    '            </button>\n' +
+                    '        </div>\n' +
+                    '    </div>\n' +
+                    '    <pre class="p-4 overflow-x-auto text-xs text-cyan-300/90 font-mono leading-relaxed m-0"><code id="' + uniqueId + '">' + cleanCode + '</code></pre>\n' +
+                    '</div>\n';
+            });
+
+            return escaped.replace(/\n/g, '<br>');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function copySnippet(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            const textArea = document.createElement("textarea");
+            textArea.value = codeText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showNotification("Код успешно скопирован!", "success");
+            } catch (err) {
+                showNotification("Не удалось скопировать", "error");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function downloadSnippet(elementId, lang) {
+            const codeText = document.getElementById(elementId).textContent;
+            let ext = lang.toLowerCase();
+            if (ext === 'python') ext = 'py';
+            else if (ext === 'javascript' || ext === 'js') ext = 'js';
+            else if (ext === 'bash' || ext === 'sh') ext = 'sh';
+
+            const blob = new Blob([codeText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `script_${Date.now()}.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification("Файл успешно скачан!", "success");
+        }
+
+        function showNotification(message, type) {
+            const notif = document.createElement('div');
+            notif.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-2xl text-xs font-medium text-white flex items-center space-x-2.5 transition-all transform translate-y-4 opacity-0 backdrop-blur-xl border ${type === 'error' ? 'bg-rose-600/90 border-rose-500' : 'bg-emerald-600/90 border-emerald-500'}`;
+            notif.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} text-sm"></i><span>${message}</span>`;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => notif.classList.remove('translate-y-4', 'opacity-0'), 50);
+            setTimeout(() => {
+                notif.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => notif.remove(), 350);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
